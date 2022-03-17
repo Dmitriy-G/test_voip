@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
@@ -17,7 +16,6 @@ public class ClientApplication {
         String serverName = args[0];
         int port = Integer.parseInt(args[1]);
         String clientGuid = UUID.randomUUID().toString();
-        List<String> users = new ArrayList<>();
         try {
             System.out.println("Connect to " + serverName + " port " + port);
             Socket client = new Socket(serverName, port);
@@ -28,8 +26,11 @@ public class ClientApplication {
             DataOutputStream out = new DataOutputStream(outToServer);
             DataInputStream in = new DataInputStream(inFromServer);
             register(out, clientGuid);
+
+            //New thread for async listen event bus (new message from server)
             new Thread(new InputDataThread(in)).start();
 
+            //Scanner in the loop for receive user commands via command line
             Scanner scanner = new Scanner(System.in);
             while (true) {
                 String[] commandArgs = scanner.nextLine().split(" ");
@@ -41,7 +42,7 @@ public class ClientApplication {
                         doChat(out, clientGuid, target, text);
                     }
                     case "users" -> {
-                        users = requestUsers(in, out, clientGuid);
+                        requestUsers(in, out, clientGuid);
                     }
                     case "exit" -> {
                         out.writeUTF("Client " + clientGuid + " disconnected");
@@ -55,15 +56,19 @@ public class ClientApplication {
         }
     }
 
+    //Initial new message event
     public static void doChat(DataOutputStream outputStream, String userGuid, String destination, String message) throws IOException {
         outputStream.writeUTF("message|" + userGuid + "|" + destination + "|" + message);
     }
 
+    //Initial new user event
     public static void register(DataOutputStream outputStream, String userGuid) throws IOException {
         System.out.println("Registration event send");
         outputStream.writeUTF("register|" + userGuid);
     }
 
+    //Request users list
+    @Deprecated
     public static List<String> requestUsers(DataInputStream inputStream, DataOutputStream outputStream, String userGuid) throws IOException {
         System.out.println("Users list was requested");
         outputStream.writeUTF("users|" + userGuid);

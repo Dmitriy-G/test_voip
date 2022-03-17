@@ -13,6 +13,7 @@ public class InputDataThread implements Runnable {
     @Override
     public void run() {
         System.out.println("Processing input data started");
+        //TODO: needed to subscribe to event bus here and listen for new message (in the loop?)
         try {
             while (true) {
                 String[] serverData = in.readUTF().split("\\|");

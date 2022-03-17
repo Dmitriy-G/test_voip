@@ -20,7 +20,9 @@ public class ClientThread implements Runnable {
             System.out.println("[" + Thread.currentThread().getId() + "]" + "Connection created for client " + this.clientGuid);
             DataInputStream in = streams.getIn();
             DataOutputStream out = streams.getOut();
+            //Listen event from ONE SPECIFIC client. We can use one stream for several clients? EventBus must help
             while (true) {
+                //Parse message from client
                 String[] clientData = in.readUTF().split("\\|");
                 String command = clientData[0];
                 String clientId = clientData[1];
@@ -46,6 +48,7 @@ public class ClientThread implements Runnable {
         }
     }
 
+    //Send message to client
     private void sendMessage(String target, String text) {
         UserStreams targetUserStreams = SpikeStorage.clients.get(target);
         if (targetUserStreams == null) {
