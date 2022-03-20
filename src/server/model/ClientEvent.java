@@ -1,4 +1,4 @@
-package model;
+package server.model;
 
 //Client events for event bus
 public enum ClientEvent {
