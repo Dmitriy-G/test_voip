@@ -1,14 +1,16 @@
 package server.service;
 
+import server.task.CreateNewConnectionTask;
+import server.task.ReadNewInputDataTask;
+import server.task.SendMessageToClientTask;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -17,16 +19,17 @@ import java.util.Set;
 public class ConnectionService {
 
     private final Selector selector;
-    private final ClientService clientService;
+    private final TransportService transportService;
+    private final TaskService taskService;
     private final String serverName;
     private final int port;
-    private final static String clientChannel = "clientChannel";
     private final static String serverChannel = "serverChannel";
     private final static String channelType = "channelType";
 
-    public ConnectionService(Selector selector, ClientService clientService, String serverName, int port) {
+    public ConnectionService(Selector selector, TransportService transportService, TaskService taskService, String serverName, int port) {
         this.selector = selector;
-        this.clientService = clientService;
+        this.transportService = transportService;
+        this.taskService = taskService;
         this.serverName = serverName;
         this.port = port;
     }
@@ -52,6 +55,7 @@ public class ConnectionService {
     }
 
     public void listenNewClientsCommand() {
+        //TODO: remove while true
         while (true) {
             // check if client connected
             try {
@@ -64,9 +68,21 @@ public class ConnectionService {
                     SelectionKey key = iterator.next();
                     if (((Map<String, String>) key.attachment()).get(channelType).equals(
                             serverChannel)) {
-                        newClientInputConnection(key);
+                        CreateNewConnectionTask createNewConnectionTask = new CreateNewConnectionTask(
+                                selector,
+                                key,
+                                channelType
+                        );
+                        this.taskService.executeTask(createNewConnectionTask);
+                        //join for waiting end this task. For prevent multiple running
+                        //createNewConnectionTask.join();
                     } else {
-                        newDataFromClientReceived(key);
+                        ReadNewInputDataTask readNewDataTask = new ReadNewInputDataTask(key);
+                        this.taskService.executeTask(readNewDataTask);
+                        CharBuffer inputCommand = readNewDataTask.join();
+                        SocketChannel channel = (SocketChannel) key.channel();
+                        SendMessageToClientTask sendMessageToClientTask = new SendMessageToClientTask(transportService, channel, inputCommand);
+                        this.taskService.executeTask(sendMessageToClientTask);
                     }
 
                     // once a key is handled, it needs to be removed
@@ -74,55 +90,6 @@ public class ConnectionService {
                 }
             } catch (IOException e) {
                 e.printStackTrace();
-            }
-        }
-    }
-
-    private void newClientInputConnection(SelectionKey key) throws IOException {
-        System.out.println("New client was connected");
-        ServerSocketChannel serverSocketChannel = (ServerSocketChannel) key
-                .channel();
-        // this channel will return null if no client is connected.
-        SocketChannel clientSocketChannel = serverSocketChannel
-                .accept();
-
-        if (clientSocketChannel != null) {
-            // set the client connection to be non blocking
-            clientSocketChannel.configureBlocking(false);
-            SelectionKey clientKey = clientSocketChannel.register(
-                    selector, SelectionKey.OP_READ,
-                    SelectionKey.OP_WRITE);
-            Map<String, String> clientProperties = new HashMap<>();
-            clientProperties.put(channelType, clientChannel);
-            clientKey.attach(clientProperties);
-        }
-    }
-
-    private void newDataFromClientReceived(SelectionKey key) throws IOException {
-        // TODO: must working with new data in new thread for non blocking (thread pool)
-        // data is available for read
-        // buffer for reading
-        ByteBuffer buffer = ByteBuffer.allocate(100);
-        SocketChannel clientChannel = (SocketChannel) key.channel();
-        int bytesRead;
-        CharBuffer inputCommand = null;
-        if (key.isReadable()) {
-            // the channel is non blocking so keep it open till the
-            // count is >=0
-            if ((bytesRead = clientChannel.read(buffer)) > 0) {
-                buffer.flip();
-                inputCommand = Charset.defaultCharset().decode(
-                        buffer);
-                clientService.acceptInputData(clientChannel, inputCommand);
-                buffer.clear();
-            }
-            // send result of the command for client
-            //buffer.clear();
-
-            if (bytesRead < 0) {
-                // the key is automatically invalidated once the
-                // channel is closed
-                clientChannel.close();
             }
         }
     }

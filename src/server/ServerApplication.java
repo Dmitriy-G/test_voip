@@ -1,11 +1,12 @@
 package server;
 
 import server.service.ConnectionService;
-import server.service.ClientService;
+import server.service.TaskService;
 import server.service.TransportService;
 
 import java.io.IOException;
 import java.nio.channels.Selector;
+import java.util.concurrent.ForkJoinPool;
 
 public class ServerApplication {
     public static void main(String[] args) {
@@ -14,10 +15,12 @@ public class ServerApplication {
             int port = Integer.parseInt(args[1]);
             Selector selector = Selector.open();
             TransportService transportService = new TransportService();
-            ClientService clientService = new ClientService(transportService);
+            ForkJoinPool forkJoinPool = new ForkJoinPool();
+            TaskService taskService = new TaskService(forkJoinPool);
             ConnectionService connectionService = new ConnectionService(
                     selector,
-                    clientService,
+                    transportService,
+                    taskService,
                     serverName,
                     port
             );
