@@ -20,16 +20,14 @@ public class ConnectionService {
 
     private final Selector selector;
     private final TransportService transportService;
-    private final TaskService taskService;
     private final String serverName;
     private final int port;
     private final static String serverChannel = "serverChannel";
     private final static String channelType = "channelType";
 
-    public ConnectionService(Selector selector, TransportService transportService, TaskService taskService, String serverName, int port) {
+    public ConnectionService(Selector selector, TransportService transportService, String serverName, int port) {
         this.selector = selector;
         this.transportService = transportService;
-        this.taskService = taskService;
         this.serverName = serverName;
         this.port = port;
     }
@@ -55,7 +53,6 @@ public class ConnectionService {
     }
 
     public void listenNewClientsCommand() {
-        //TODO: remove while true
         while (true) {
             // check if client connected
             try {
@@ -73,18 +70,19 @@ public class ConnectionService {
                                 key,
                                 channelType
                         );
-                        this.taskService.executeTask(createNewConnectionTask);
+                        createNewConnectionTask.fork();
                         //join for waiting end this task. For prevent multiple running
-                        //createNewConnectionTask.join();
+                        boolean isConnected = createNewConnectionTask.join();
+                        if (!isConnected)
+                            System.out.println("New client don't connections");
                     } else {
                         ReadNewInputDataTask readNewDataTask = new ReadNewInputDataTask(key);
-                        this.taskService.executeTask(readNewDataTask);
+                        readNewDataTask.fork();
                         CharBuffer inputCommand = readNewDataTask.join();
                         SocketChannel channel = (SocketChannel) key.channel();
                         SendMessageToClientTask sendMessageToClientTask = new SendMessageToClientTask(transportService, channel, inputCommand);
-                        this.taskService.executeTask(sendMessageToClientTask);
+                        sendMessageToClientTask.fork();
                     }
-
                     // once a key is handled, it needs to be removed
                     iterator.remove();
                 }
