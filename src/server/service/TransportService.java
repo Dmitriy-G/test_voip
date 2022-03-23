@@ -10,6 +10,7 @@ public class TransportService {
         CharBuffer writeBuffer = CharBuffer.wrap(data);
         while (writeBuffer.hasRemaining()) {
             try {
+                System.out.println(clientChannel.getRemoteAddress());
                 clientChannel.write(Charset.defaultCharset()
                         .encode(writeBuffer));
             } catch (IOException e) {
