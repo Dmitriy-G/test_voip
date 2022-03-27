@@ -1,10 +1,10 @@
 package server;
 
-import server.model.User;
+import server.model.Client;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
 
 public class SpikeStorage {
-    public static Set<User> users = new HashSet<>();
+    public static Map<String, Client> users = new HashMap<>();
 }

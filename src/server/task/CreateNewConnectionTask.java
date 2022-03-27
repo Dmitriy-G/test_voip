@@ -1,7 +1,7 @@
 package server.task;
 
 import server.SpikeStorage;
-import server.model.User;
+import server.model.Client;
 
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
@@ -44,12 +44,13 @@ public class CreateNewConnectionTask extends RecursiveTask<Boolean> {
                 clientProperties.put(channelType, clientChannel);
                 clientKey.attach(clientProperties);
             }
-            User user = new User(
-                    "stubGuid",
+            //TODO: server must generated guid for client and send it in first message
+            Client client = new Client(
+                    "1",
                     "stubUsername",
-                    clientSocketChannel.getRemoteAddress()
+                    clientSocketChannel.socket()
             );
-            SpikeStorage.users.add(user);
+            SpikeStorage.users.put("1", client);
             System.out.println("New client was connected in thread " + Thread.currentThread().getName());
         } catch (IOException e) {
             e.printStackTrace();

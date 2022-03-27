@@ -1,8 +1,10 @@
 package server.service;
 
+import server.model.ClientMessage;
 import server.task.CreateNewConnectionTask;
 import server.task.ReadNewInputDataTask;
 import server.task.SendMessageToClientTask;
+import server.utils.Helper;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -79,8 +81,8 @@ public class ConnectionService {
                         ReadNewInputDataTask readNewDataTask = new ReadNewInputDataTask(key);
                         readNewDataTask.fork();
                         CharBuffer inputCommand = readNewDataTask.join();
-                        SocketChannel channel = (SocketChannel) key.channel();
-                        SendMessageToClientTask sendMessageToClientTask = new SendMessageToClientTask(transportService, channel, inputCommand);
+                        ClientMessage clientMessage = Helper.commandResolver(inputCommand.toString());
+                        SendMessageToClientTask sendMessageToClientTask = new SendMessageToClientTask(transportService, clientMessage);
                         sendMessageToClientTask.fork();
                     }
                     // once a key is handled, it needs to be removed

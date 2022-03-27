@@ -16,6 +16,7 @@ public class ClientApplication {
     public static void main(String[] args) {
         String serverName = args[0];
         int port = Integer.parseInt(args[1]);
+        String clientGuid = "";
         try {
             SocketChannel channel = SocketChannel.open();
             Selector selector = Selector.open();
@@ -31,11 +32,14 @@ public class ClientApplication {
             //New thread for async listen event bus (new message from server)
             //new Thread(new InputDataThread(in)).start();
 
+            //TODO: before send any commands client must waiting for it's guid
+            clientGuid = "1";
+
             //Scanner in the loop for receive user commands via command line
             Scanner scanner = new Scanner(System.in);
             while (true) {
                 // read command and send it to server
-                String command = scanner.nextLine();
+                String command = clientGuid + " " +  scanner.nextLine();
                 CharBuffer  c = CharBuffer.wrap(command);
                 ByteBuffer b = StandardCharsets.ISO_8859_1.encode(c);
                 channel.write(b);
