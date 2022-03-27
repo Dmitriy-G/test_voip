@@ -4,6 +4,7 @@ import server.SpikeStorage;
 import server.model.Client;
 import server.model.ClientMessage;
 import server.service.TransportService;
+import server.utils.Helper;
 
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
@@ -58,7 +59,7 @@ public class CreateNewConnectionTask extends RecursiveTask<Boolean> {
                     clientSocketChannel.socket()
             );
             SpikeStorage.users.put(guid, client);
-            System.out.println("New client was connected in thread " + Thread.currentThread().getName());
+            Helper.logger.info("New client was connected in thread " + Thread.currentThread().getName());
 
             ClientMessage clientMessage = new ClientMessage(
                     "System",

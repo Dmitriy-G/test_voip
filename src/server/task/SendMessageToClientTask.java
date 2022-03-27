@@ -3,6 +3,7 @@ package server.task;
 import server.SpikeStorage;
 import server.model.ClientMessage;
 import server.service.TransportService;
+import server.utils.Helper;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -19,7 +20,7 @@ public class SendMessageToClientTask extends RecursiveTask<Boolean>  {
 
     @Override
     protected Boolean compute() {
-        System.out.println(clientMessage.getBody());
+        Helper.logger.info(clientMessage.getBody());
         //TODO: need resolve specific connection target for send this message
         Socket socket = SpikeStorage.users.get(clientMessage.getTo()).getSocket();
         try {

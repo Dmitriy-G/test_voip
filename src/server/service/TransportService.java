@@ -1,5 +1,7 @@
 package server.service;
 
+import server.utils.Helper;
+
 import java.io.IOException;
 import java.net.Socket;
 import java.nio.channels.SocketChannel;
@@ -10,7 +12,7 @@ public class TransportService {
         SocketChannel channel = socket.getChannel();
         // write to the stream
         try {
-            System.out.println("Send data to " + socket.getRemoteSocketAddress());
+            Helper.logger.info("Send data to " + socket.getRemoteSocketAddress());
             channel.write(Charset.defaultCharset()
                     .encode(data));
         } catch (IOException e) {

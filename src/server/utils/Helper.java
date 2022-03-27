@@ -7,8 +7,12 @@ import server.model.Client;
 import server.model.Command;
 
 import java.util.Collection;
+import java.util.logging.Logger;
 
 public class Helper {
+
+    public final static Logger logger = Logger.getLogger("Main logger");
+
     private Helper() {
     }
 

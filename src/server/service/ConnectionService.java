@@ -77,7 +77,7 @@ public class ConnectionService {
                         //join for waiting end this task. For prevent multiple running
                         boolean isConnected = createNewConnectionTask.join();
                         if (!isConnected)
-                            System.out.println("New client don't connections");
+                            Helper.logger.warning("New client don't connections");
                     } else {
                         ReadNewInputDataTask readNewDataTask = new ReadNewInputDataTask(key);
                         readNewDataTask.fork();
