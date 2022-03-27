@@ -70,6 +70,7 @@ public class CreateNewConnectionTask extends RecursiveTask<Boolean> {
             SendMessageToClientTask sendMessageToClientTask = new SendMessageToClientTask(transportService, clientMessage);
             sendMessageToClientTask.fork();
         } catch (IOException e) {
+            //TODO: implement exceptions handler
             e.printStackTrace();
         }
         return true;
