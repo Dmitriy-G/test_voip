@@ -28,4 +28,20 @@ public class Command {
     public String getBody() {
         return body;
     }
+
+    public void setSourceGuid(String sourceGuid) {
+        this.sourceGuid = sourceGuid;
+    }
+
+    public void setEventType(ClientEvent eventType) {
+        this.eventType = eventType;
+    }
+
+    public void setTargetGuid(String targetGuid) {
+        this.targetGuid = targetGuid;
+    }
+
+    public void setBody(String body) {
+        this.body = body;
+    }
 }

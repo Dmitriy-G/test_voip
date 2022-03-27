@@ -2,6 +2,8 @@ package server.task;
 
 import server.SpikeStorage;
 import server.model.Client;
+import server.model.ClientMessage;
+import server.service.TransportService;
 
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
@@ -10,6 +12,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.RecursiveTask;
 
 public class CreateNewConnectionTask extends RecursiveTask<Boolean> {
@@ -17,12 +20,14 @@ public class CreateNewConnectionTask extends RecursiveTask<Boolean> {
     private final Selector selector;
     private final SelectionKey key;
     private final String channelType;
+    private final TransportService transportService;
     private final static String clientChannel = "clientChannel";
 
-    public CreateNewConnectionTask(Selector selector, SelectionKey key, String channelType) {
+    public CreateNewConnectionTask(Selector selector, SelectionKey key, String channelType, TransportService transportService) {
         this.selector = selector;
         this.key = key;
         this.channelType = channelType;
+        this.transportService = transportService;
     }
 
     @Override
@@ -44,14 +49,26 @@ public class CreateNewConnectionTask extends RecursiveTask<Boolean> {
                 clientProperties.put(channelType, clientChannel);
                 clientKey.attach(clientProperties);
             }
+            //TODO: server must received from client his username
             //TODO: server must generated guid for client and send it in first message
+            String guid = UUID.randomUUID().toString();
             Client client = new Client(
-                    "stubGuid",
-                    "stubUsername",
+                    guid,
+                    "",
                     clientSocketChannel.socket()
             );
-            SpikeStorage.users.put("stubGuid", client);
+            SpikeStorage.users.put(guid, client);
             System.out.println("New client was connected in thread " + Thread.currentThread().getName());
+
+            ClientMessage clientMessage = new ClientMessage(
+                    "System",
+                    guid,
+                    "System",
+                    guid
+            );
+
+            SendMessageToClientTask sendMessageToClientTask = new SendMessageToClientTask(transportService, clientMessage);
+            sendMessageToClientTask.fork();
         } catch (IOException e) {
             e.printStackTrace();
         }

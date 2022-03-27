@@ -24,6 +24,20 @@ public class Helper {
                         command.getBody()
                 );
             }
+            case REGISTER: {
+                String guid = command.getSourceGuid();
+                Client client = SpikeStorage.users.get(guid);
+                client.setUsername(command.getBody());
+                SpikeStorage.users.put(guid, client);
+
+                command.setBody(guid);
+                return new ClientMessage(
+                        command.getSourceGuid(),
+                        command.getTargetGuid(),
+                        command.getSourceGuid(),
+                        command.getBody()
+                );
+            }
         }
 
         //Fix potential npe
@@ -32,7 +46,12 @@ public class Helper {
 
     private static String nameToGuid(String name) {
         Collection<Client> clients = SpikeStorage.users.values();
-        return clients.stream().filter(e -> e.getUsername().equals(name)).findFirst().orElseThrow().getGuid();
+        Client client = clients.stream().filter(e -> e.getUsername().equals(name)).findFirst().orElse(null);
+        if (client == null) {
+            System.err.println("Client with username " + name + " not found!");
+            return "";
+        }
+        return client.getGuid();
     }
 
     private static Command createCommandFromClientData(String[] data) {

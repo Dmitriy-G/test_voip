@@ -17,6 +17,7 @@ public class ClientApplication {
         String serverName = args[0];
         int port = Integer.parseInt(args[1]);
         String clientGuid = "";
+        boolean registered = false;
         try {
             SocketChannel channel = SocketChannel.open();
             Selector selector = Selector.open();
@@ -27,19 +28,46 @@ public class ClientApplication {
                 System.out.println("still connecting");
             }
             System.out.println("Connect to " + channel.getRemoteAddress());
-            //register(out, clientGuid);
 
-            //New thread for async listen event bus (new message from server)
-            //new Thread(new InputDataThread(in)).start();
+            while (true) {
+                if (selector.select() == 0) {
+                    continue;
+                }
+                Iterator<SelectionKey> registerIterator = selector.selectedKeys().iterator();
 
-            //TODO: before send any commands client must waiting for it's guid
-            clientGuid = "stubGuid";
+                while (registerIterator.hasNext()) {
+                    SelectionKey key = registerIterator.next();
+                    registerIterator.remove();
+                    if (key.isReadable()) {
+                        ByteBuffer buffer = ByteBuffer.allocate(100);
+                        channel.read(buffer);
+                        buffer.flip();
+                        clientGuid = String.valueOf(Charset.defaultCharset().decode(
+                                buffer));
+                        System.out.println(clientGuid);
+                    }
+                }
+                break;
+            }
 
             //Scanner in the loop for receive user commands via command line
             Scanner scanner = new Scanner(System.in);
             while (true) {
                 // read command and send it to server
-                String command = clientGuid + " " +  scanner.nextLine();
+                if (!registered) {
+                    System.out.println("Please write username");
+                    String username = scanner.nextLine();
+                    String command = clientGuid + " " + "REGISTER" + " " + "System" + " " + username;
+                    CharBuffer  c = CharBuffer.wrap(command);
+                    ByteBuffer b = StandardCharsets.ISO_8859_1.encode(c);
+                    channel.write(b);
+                    registered = true;
+                    System.out.println("Success registration as " + username);
+                    continue;
+                }
+
+                String line = scanner.nextLine();
+                String command = clientGuid + " " +  line;
                 CharBuffer  c = CharBuffer.wrap(command);
                 ByteBuffer b = StandardCharsets.ISO_8859_1.encode(c);
                 channel.write(b);

@@ -70,7 +70,8 @@ public class ConnectionService {
                         CreateNewConnectionTask createNewConnectionTask = new CreateNewConnectionTask(
                                 selector,
                                 key,
-                                channelType
+                                channelType,
+                                transportService
                         );
                         createNewConnectionTask.fork();
                         //join for waiting end this task. For prevent multiple running
@@ -81,6 +82,9 @@ public class ConnectionService {
                         ReadNewInputDataTask readNewDataTask = new ReadNewInputDataTask(key);
                         readNewDataTask.fork();
                         CharBuffer inputCommand = readNewDataTask.join();
+                        if (inputCommand == null) {
+                            continue;
+                        }
                         ClientMessage clientMessage = Helper.commandResolver(inputCommand.toString());
                         SendMessageToClientTask sendMessageToClientTask = new SendMessageToClientTask(transportService, clientMessage);
                         sendMessageToClientTask.fork();
