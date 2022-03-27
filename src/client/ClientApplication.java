@@ -33,7 +33,7 @@ public class ClientApplication {
             //new Thread(new InputDataThread(in)).start();
 
             //TODO: before send any commands client must waiting for it's guid
-            clientGuid = "1";
+            clientGuid = "stubGuid";
 
             //Scanner in the loop for receive user commands via command line
             Scanner scanner = new Scanner(System.in);

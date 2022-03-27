@@ -46,11 +46,11 @@ public class CreateNewConnectionTask extends RecursiveTask<Boolean> {
             }
             //TODO: server must generated guid for client and send it in first message
             Client client = new Client(
-                    "1",
+                    "stubGuid",
                     "stubUsername",
                     clientSocketChannel.socket()
             );
-            SpikeStorage.users.put("1", client);
+            SpikeStorage.users.put("stubGuid", client);
             System.out.println("New client was connected in thread " + Thread.currentThread().getName());
         } catch (IOException e) {
             e.printStackTrace();

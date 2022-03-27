@@ -22,7 +22,7 @@ public class SendMessageToClientTask extends RecursiveTask<Boolean>  {
     protected Boolean compute() {
         System.out.println(clientMessage.getBody());
         //TODO: need resolve specific connection target for send this message
-        Socket socket = SpikeStorage.users.get("1").getSocket();
+        Socket socket = SpikeStorage.users.get("stubGuid").getSocket();
         try {
             transportService.sendCharBufferData(socket, clientMessage.getBody());
         } catch (IOException e) {
