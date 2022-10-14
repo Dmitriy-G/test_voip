@@ -41,6 +41,7 @@ public class ConnectionService {
             channel.bind(new InetSocketAddress(serverName, port));
             channel.configureBlocking(false);
 
+            Helper.logger.info("Waiting for new connection on " + channel.getLocalAddress());
             // new connection has been accepted
             SelectionKey socketServerSelectionKey = channel.register(selector,
                     SelectionKey.OP_ACCEPT);
@@ -92,7 +93,7 @@ public class ConnectionService {
                     // once a key is handled, it needs to be removed
                     iterator.remove();
                 }
-            } catch (IOException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
