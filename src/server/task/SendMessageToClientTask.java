@@ -7,6 +7,7 @@ import server.service.TransportService;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.concurrent.RecursiveTask;
 
@@ -25,11 +26,23 @@ public class SendMessageToClientTask extends RecursiveTask<Boolean>  {
         for (Map.Entry<String, Client> entry : SpikeStorage.users.entrySet()) {
             Socket socket = entry.getValue().getSocket();
             try {
-                transportService.sendBufferData(socket, clientMessage.getBody());
+                if (socket != null) {
+                    transportService.sendBufferData(socket, cloneData(clientMessage.getBody()));
+                }
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
+        clientMessage.getBody().clear();
         return true;
+    }
+
+    private ByteBuffer cloneData(ByteBuffer original) {
+        ByteBuffer clone = ByteBuffer.allocate(original.capacity());
+        original.rewind();//copy from the beginning
+        clone.put(original);
+        original.rewind();
+        clone.flip();
+        return clone;
     }
 }

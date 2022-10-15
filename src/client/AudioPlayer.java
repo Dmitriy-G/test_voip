@@ -4,7 +4,6 @@ import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.SourceDataLine;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 
@@ -12,12 +11,10 @@ public class AudioPlayer {
 
     private AudioFormat audioFormat;
     private SourceDataLine sourceDataLine;
-    private ByteArrayOutputStream byteArrayOutputStream;
 
-    public AudioPlayer(AudioFormat audioFormat, SourceDataLine sourceDataLine, ByteArrayOutputStream byteArrayOutputStream) {
+    public AudioPlayer(AudioFormat audioFormat, SourceDataLine sourceDataLine) {
         this.audioFormat = audioFormat;
         this.sourceDataLine = sourceDataLine;
-        this.byteArrayOutputStream = byteArrayOutputStream;
     }
 
     public void play(ByteBuffer byteBuffer) {

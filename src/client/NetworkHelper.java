@@ -48,6 +48,7 @@ public class NetworkHelper {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        b.clear();
         System.out.println("Data was send");
     }
 

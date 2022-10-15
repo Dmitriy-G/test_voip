@@ -31,6 +31,10 @@ public class AudioRecorder {
         }
     }
 
+    public void stopCapture() {
+        stopCapture = true;
+    }
+
     class CaptureThread extends Thread {
 
         byte[] tempBuffer = new byte[10000];

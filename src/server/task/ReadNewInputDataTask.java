@@ -1,12 +1,9 @@
 package server.task;
 
 import java.io.IOException;
-import java.nio.Buffer;
 import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
-import java.nio.charset.Charset;
 import java.util.concurrent.RecursiveTask;
 
 public class ReadNewInputDataTask extends RecursiveTask<ByteBuffer> {
@@ -23,7 +20,8 @@ public class ReadNewInputDataTask extends RecursiveTask<ByteBuffer> {
         // buffer for reading
         ByteBuffer data = null;
         try {
-            ByteBuffer buffer = ByteBuffer.allocate(100);
+            int bufferSize = 20000;
+            ByteBuffer buffer = ByteBuffer.allocate(bufferSize);
             SocketChannel clientChannel = (SocketChannel) key.channel();
             int bytesRead;
             if (key.isReadable()) {

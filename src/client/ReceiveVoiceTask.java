@@ -8,12 +8,12 @@ import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 import java.util.concurrent.RecursiveTask;
 
-public class ReceiveAndPlayVoiceTask extends RecursiveTask<Void> {
+public class ReceiveVoiceTask extends RecursiveTask<Void> {
     private AudioPlayer audioPlayer;
     private Selector selector;
     private SocketChannel channel;
 
-    public ReceiveAndPlayVoiceTask(AudioPlayer audioPlayer, Selector selector, SocketChannel channel) {
+    public ReceiveVoiceTask(AudioPlayer audioPlayer, Selector selector, SocketChannel channel) {
         this.audioPlayer = audioPlayer;
         this.selector = selector;
         this.channel = channel;
@@ -26,27 +26,22 @@ public class ReceiveAndPlayVoiceTask extends RecursiveTask<Void> {
                 if (selector.select() == 0) {
                     continue;
                 }
-                Iterator<SelectionKey> iterator = selector.selectedKeys().iterator();
 
-                int bytesRead;
+                System.out.println("Received data from: " + channel.socket().getRemoteSocketAddress());
+
+                Iterator<SelectionKey> iterator = selector.selectedKeys().iterator();
 
                 while (iterator.hasNext()) {
                     SelectionKey key = iterator.next();
                     if (key.isReadable()) {
-                        ByteBuffer buffer = ByteBuffer.allocate(10000);
+                        ByteBuffer buffer = ByteBuffer.allocate(20000);
 
-                        if ((bytesRead = channel.read(buffer)) > 0) {
+                        if (channel.read(buffer) > 0) {
                             buffer.flip();
                             audioPlayer.play(buffer);
                         }
                         // send result of the command for client
                         buffer.clear();
-                        System.out.println(bytesRead);
-                        /*if (bytesRead < 0) {
-                            // the key is automatically invalidated once the
-                            // channel is closed
-                            client.close();
-                        }*/
                     }
 
                     iterator.remove();
