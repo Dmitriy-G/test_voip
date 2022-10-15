@@ -8,6 +8,8 @@ import server.utils.Helper;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.nio.Buffer;
+import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -66,8 +68,8 @@ public class ConnectionService {
                 Iterator<SelectionKey> iterator = selectedKeys.iterator();
                 while (iterator.hasNext()) {
                     SelectionKey key = iterator.next();
-                    if (((Map<String, String>) key.attachment()).get(channelType).equals(
-                            serverChannel)) {
+                    if (((Map<String, String>) key.attachment()).get(channelType).equals(serverChannel)) {
+
                         CreateNewConnectionTask createNewConnectionTask = new CreateNewConnectionTask(
                                 selector,
                                 key,
@@ -82,11 +84,13 @@ public class ConnectionService {
                     } else {
                         ReadNewInputDataTask readNewDataTask = new ReadNewInputDataTask(key);
                         readNewDataTask.fork();
-                        CharBuffer inputCommand = readNewDataTask.join();
+                        ByteBuffer inputCommand = readNewDataTask.join();
                         if (inputCommand == null) {
                             continue;
                         }
-                        ClientMessage clientMessage = Helper.commandResolver(inputCommand.toString());
+                        //ClientMessage clientMessage = Helper.commandResolver(inputCommand.toString());
+                        ClientMessage clientMessage = new ClientMessage("", "", "", inputCommand);
+
                         SendMessageToClientTask sendMessageToClientTask = new SendMessageToClientTask(transportService, clientMessage);
                         sendMessageToClientTask.fork();
                     }

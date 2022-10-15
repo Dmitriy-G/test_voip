@@ -55,13 +55,13 @@ public class CreateNewConnectionTask extends RecursiveTask<Boolean> {
             String guid = UUID.randomUUID().toString();
             Client client = new Client(
                     guid,
-                    "",
+                    UUID.randomUUID().toString(),
                     clientSocketChannel.socket()
             );
             SpikeStorage.users.put(guid, client);
             Helper.logger.info("New client was connected in thread " + Thread.currentThread().getName());
 
-            ClientMessage clientMessage = new ClientMessage(
+           /* ClientMessage clientMessage = new ClientMessage(
                     "System",
                     guid,
                     "System",
@@ -69,7 +69,7 @@ public class CreateNewConnectionTask extends RecursiveTask<Boolean> {
             );
 
             SendMessageToClientTask sendMessageToClientTask = new SendMessageToClientTask(transportService, clientMessage);
-            sendMessageToClientTask.fork();
+            sendMessageToClientTask.fork();*/
         } catch (IOException e) {
             //TODO: implement exceptions handler
             e.printStackTrace();

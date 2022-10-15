@@ -1,12 +1,13 @@
 package server.task;
 
 import server.SpikeStorage;
+import server.model.Client;
 import server.model.ClientMessage;
 import server.service.TransportService;
-import server.utils.Helper;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.util.Map;
 import java.util.concurrent.RecursiveTask;
 
 public class SendMessageToClientTask extends RecursiveTask<Boolean>  {
@@ -20,13 +21,14 @@ public class SendMessageToClientTask extends RecursiveTask<Boolean>  {
 
     @Override
     protected Boolean compute() {
-        Helper.logger.info(clientMessage.getBody());
         //TODO: need resolve specific connection target for send this message
-        Socket socket = SpikeStorage.users.get(clientMessage.getTo()).getSocket();
-        try {
-            transportService.sendCharBufferData(socket, clientMessage.getBody());
-        } catch (IOException e) {
-            e.printStackTrace();
+        for (Map.Entry<String, Client> entry : SpikeStorage.users.entrySet()) {
+            Socket socket = entry.getValue().getSocket();
+            try {
+                transportService.sendBufferData(socket, clientMessage.getBody());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
         return true;
     }

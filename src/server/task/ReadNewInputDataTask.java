@@ -1,6 +1,7 @@
 package server.task;
 
 import java.io.IOException;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.channels.SelectionKey;
@@ -8,7 +9,7 @@ import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
 import java.util.concurrent.RecursiveTask;
 
-public class ReadNewInputDataTask extends RecursiveTask<CharBuffer> {
+public class ReadNewInputDataTask extends RecursiveTask<ByteBuffer> {
 
     private final SelectionKey key;
 
@@ -17,10 +18,10 @@ public class ReadNewInputDataTask extends RecursiveTask<CharBuffer> {
     }
 
     @Override
-    protected CharBuffer compute() {
+    protected ByteBuffer compute() {
         // data is available for read
         // buffer for reading
-        CharBuffer inputCommand = null;
+        ByteBuffer data = null;
         try {
             ByteBuffer buffer = ByteBuffer.allocate(100);
             SocketChannel clientChannel = (SocketChannel) key.channel();
@@ -30,12 +31,11 @@ public class ReadNewInputDataTask extends RecursiveTask<CharBuffer> {
                 // count is >=0
                 if ((bytesRead = clientChannel.read(buffer)) > 0) {
                     buffer.flip();
-                    inputCommand = Charset.defaultCharset().decode(
-                            buffer);
+                    data = buffer;
                     buffer.clear();
                 }
                 // send result of the command for client
-                //buffer.clear();
+                buffer.clear();
                 if (bytesRead < 0) {
                     // the key is automatically invalidated once the
                     // channel is closed
@@ -46,6 +46,6 @@ public class ReadNewInputDataTask extends RecursiveTask<CharBuffer> {
                 IOException e) {
             e.printStackTrace();
         }
-        return inputCommand;
+        return data;
     }
 }

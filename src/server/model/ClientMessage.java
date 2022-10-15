@@ -1,12 +1,14 @@
 package server.model;
 
+import java.nio.ByteBuffer;
+
 public class ClientMessage {
     private String from;
     private String to;
     private String owner;
-    private String body;
+    private ByteBuffer body;
 
-    public ClientMessage(String from, String to, String owner, String body) {
+    public ClientMessage(String from, String to, String owner, ByteBuffer body) {
         this.from = from;
         this.to = to;
         this.owner = owner;
@@ -25,7 +27,7 @@ public class ClientMessage {
         return owner;
     }
 
-    public String getBody() {
+    public ByteBuffer getBody() {
         return body;
     }
 }

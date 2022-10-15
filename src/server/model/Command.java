@@ -4,9 +4,9 @@ public class Command {
     private String sourceGuid;
     private ClientEvent eventType;
     private String targetGuid;
-    private String body;
+    private Object body;
 
-    public Command(String sourceGuid, ClientEvent eventType, String targetGuid, String body) {
+    public Command(String sourceGuid, ClientEvent eventType, String targetGuid, Object body) {
         this.sourceGuid = sourceGuid;
         this.eventType = eventType;
         this.targetGuid = targetGuid;
@@ -25,7 +25,7 @@ public class Command {
         return targetGuid;
     }
 
-    public String getBody() {
+    public Object getBody() {
         return body;
     }
 

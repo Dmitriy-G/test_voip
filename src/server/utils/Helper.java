@@ -16,7 +16,7 @@ public class Helper {
     private Helper() {
     }
 
-    public static ClientMessage commandResolver(String inputCommand) {
+    /*public static ClientMessage commandResolver(String inputCommand) {
         String[] params = inputCommand.split(" ");
         Command command = createCommandFromClientData(params);
         switch (command.getEventType()) {
@@ -31,7 +31,7 @@ public class Helper {
             case REGISTER: {
                 String guid = command.getSourceGuid();
                 Client client = SpikeStorage.users.get(guid);
-                client.setUsername(command.getBody());
+                client.setUsername((String) command.getBody());
                 SpikeStorage.users.put(guid, client);
 
                 command.setBody(guid);
@@ -65,5 +65,5 @@ public class Helper {
                 nameToGuid(data[2]),
                 data[3]
         );
-    }
+    }*/
 }

@@ -1,99 +1,94 @@
 package client;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.DataLine;
+import javax.sound.sampled.LineUnavailableException;
+import javax.sound.sampled.SourceDataLine;
+import javax.sound.sampled.TargetDataLine;
+import javax.swing.*;
+import java.awt.*;
+import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.nio.channels.SocketChannel;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.util.Iterator;
-import java.util.Scanner;
 
-public class ClientApplication {
+public class ClientApplication extends JFrame {
+    private boolean stopCapture = false;
+    private NetworkHelper networkHelper;
+    private AudioPlayer audioPlayer;
+
     public static void main(String[] args) {
         String serverName = args[0];
         int port = Integer.parseInt(args[1]);
-        String clientGuid = "";
-        boolean registered = false;
+
         try {
-            SocketChannel channel = SocketChannel.open();
-            Selector selector = Selector.open();
-            channel.configureBlocking(false);
-            channel.connect(new InetSocketAddress(serverName, port));
-            channel.register(selector, SelectionKey.OP_READ);
-            while (!channel.finishConnect()) {
-                System.out.println("still connecting");
-            }
-            System.out.println("Connect to " + channel.getRemoteAddress());
-
-            while (true) {
-                if (selector.select() == 0) {
-                    continue;
-                }
-                Iterator<SelectionKey> registerIterator = selector.selectedKeys().iterator();
-
-                while (registerIterator.hasNext()) {
-                    SelectionKey key = registerIterator.next();
-                    registerIterator.remove();
-                    if (key.isReadable()) {
-                        ByteBuffer buffer = ByteBuffer.allocate(100);
-                        channel.read(buffer);
-                        buffer.flip();
-                        clientGuid = String.valueOf(Charset.defaultCharset().decode(
-                                buffer));
-                        System.out.println(clientGuid);
-                    }
-                }
-                break;
-            }
-
-            //Scanner in the loop for receive user commands via command line
-            Scanner scanner = new Scanner(System.in);
-            while (true) {
-                // read command and send it to server
-                if (!registered) {
-                    System.out.println("Please write username");
-                    String username = scanner.nextLine();
-                    String command = clientGuid + " " + "REGISTER" + " " + "System" + " " + username;
-                    CharBuffer  c = CharBuffer.wrap(command);
-                    ByteBuffer b = StandardCharsets.ISO_8859_1.encode(c);
-                    channel.write(b);
-                    registered = true;
-                    System.out.println("Success registration as " + username);
-                    continue;
-                }
-
-                String line = scanner.nextLine();
-                String command = clientGuid + " " +  line;
-                CharBuffer  c = CharBuffer.wrap(command);
-                ByteBuffer b = StandardCharsets.ISO_8859_1.encode(c);
-                channel.write(b);
-                System.out.println("Command " + command + " was send");
-
-                // read response from server with result of this command
-                // TODO: select() can block! But we need wait server response for testing it
-                // TODO: need listener
-                if (selector.select() == 0) {
-                    continue;
-                }
-                Iterator<SelectionKey> iterator = selector.selectedKeys().iterator();
-                while (iterator.hasNext()) {
-                    SelectionKey key = iterator.next();
-                    iterator.remove();
-                    if (key.isReadable()) {
-                        ByteBuffer buffer = ByteBuffer.allocate(100);
-                        channel.read(buffer);
-                        buffer.flip();
-                        System.out.println(Charset.defaultCharset().decode(
-                                buffer));
-                    }
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
+            ClientApplication client = new ClientApplication(serverName, port);
+            ReceiveAndPlayVoiceTask receiveAndPlayVoiceTask = new ReceiveAndPlayVoiceTask(client.audioPlayer, client.networkHelper.getSelector(), client.networkHelper.getChannel());
+            receiveAndPlayVoiceTask.fork();
+        } catch (LineUnavailableException exception) {
+            exception.printStackTrace();
         }
+    }
+
+    public ClientApplication(String serverName, Integer port) throws LineUnavailableException {
+        this.networkHelper = new NetworkHelper(serverName, port);
+        this.networkHelper.connect();
+
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        AudioFormat audioFormat = Utils.getAudioFormat();
+
+        DataLine.Info targetDataLineInfo = new DataLine.Info(
+                TargetDataLine.class,
+                audioFormat);
+        TargetDataLine targetDataLine = (TargetDataLine)
+                AudioSystem.getLine(
+                        targetDataLineInfo);
+
+        DataLine.Info sourceDataLineInfo = new DataLine.Info(SourceDataLine.class, audioFormat);
+        SourceDataLine sourceDataLine = (SourceDataLine) AudioSystem.getLine(sourceDataLineInfo);
+
+        AudioRecorder audioRecorder = new AudioRecorder(audioFormat, targetDataLine, stopCapture, byteArrayOutputStream);
+        this.audioPlayer = new AudioPlayer(audioFormat, sourceDataLine, byteArrayOutputStream);
+
+        final JButton captureBtn = new JButton("Capture");
+        final JButton stopBtn = new JButton("Stop");
+        final JButton sendBtn = new JButton("Send");
+
+        captureBtn.setEnabled(true);
+        stopBtn.setEnabled(false);
+        sendBtn.setEnabled(false);
+
+        captureBtn.addActionListener(e -> {
+                    captureBtn.setEnabled(false);
+                    stopBtn.setEnabled(true);
+                    sendBtn.setEnabled(false);
+                    audioRecorder.record();
+                }
+        );
+        getContentPane().add(captureBtn);
+
+        stopBtn.addActionListener(e -> {
+                    captureBtn.setEnabled(true);
+                    stopBtn.setEnabled(false);
+                    sendBtn.setEnabled(true);
+                    stopCapture = true;
+                }
+        );
+        getContentPane().add(stopBtn);
+
+        sendBtn.addActionListener(
+                e -> {
+                    networkHelper.sendData(byteArrayOutputStream);
+                    audioPlayer.play(ByteBuffer.wrap(byteArrayOutputStream.toByteArray()));
+                }
+        );
+        getContentPane().add(sendBtn);
+
+        getContentPane().setLayout(
+                new FlowLayout());
+        setTitle("Test VOIP");
+        setDefaultCloseOperation(
+                EXIT_ON_CLOSE);
+        setSize(450, 150);
+        setVisible(true);
     }
 }
