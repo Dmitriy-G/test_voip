@@ -49,7 +49,7 @@ public class NetworkHelper {
             e.printStackTrace();
         }
         b.clear();
-        System.out.println("Data was send");
+        //System.out.println("Data was send in thread " + Thread.currentThread().getName());
     }
 
     public SocketChannel getChannel() {

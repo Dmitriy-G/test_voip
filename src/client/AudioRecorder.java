@@ -2,20 +2,25 @@ package client;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.TargetDataLine;
-import java.io.ByteArrayOutputStream;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.nio.ByteBuffer;
 
 public class AudioRecorder {
 
     private AudioFormat audioFormat;
     private TargetDataLine targetDataLine;
     private Boolean stopCapture;
-    private ByteArrayOutputStream byteArrayOutputStream;
+    private DatagramSocket socket;
+    private AudioPlayer audioPlayer;
 
-    public AudioRecorder(AudioFormat audioFormat, TargetDataLine targetDataLine, Boolean stopCapture, ByteArrayOutputStream byteArrayOutputStream) {
+    public AudioRecorder(AudioFormat audioFormat, TargetDataLine targetDataLine, Boolean stopCapture, DatagramSocket socket, AudioPlayer audioPlayer) {
         this.audioFormat = audioFormat;
         this.targetDataLine = targetDataLine;
         this.stopCapture = stopCapture;
-        this.byteArrayOutputStream = byteArrayOutputStream;
+        this.socket = socket;
+        this.audioPlayer = audioPlayer;
     }
 
     public void record() {
@@ -26,13 +31,8 @@ public class AudioRecorder {
             Thread captureThread = new Thread(new CaptureThread());
             captureThread.start();
         } catch (Exception e) {
-            System.out.println(e);
-            System.exit(0);
+            e.printStackTrace();
         }
-    }
-
-    public void stopCapture() {
-        stopCapture = true;
     }
 
     class CaptureThread extends Thread {
@@ -44,14 +44,13 @@ public class AudioRecorder {
             try {
                 while (!stopCapture) {
                     int cnt = targetDataLine.read(tempBuffer, 0, tempBuffer.length);
+                    DatagramPacket packet = new DatagramPacket(tempBuffer, tempBuffer.length, InetAddress.getLocalHost(), 8080);
                     if (cnt > 0) {
-                        byteArrayOutputStream.write(tempBuffer, 0, cnt);
+                        socket.send(packet);
                     }
                 }
-                //byteArrayOutputStream.close();
             } catch (Exception e) {
-                System.out.println(e);
-                System.exit(0);
+                e.printStackTrace();
             }
         }
     }

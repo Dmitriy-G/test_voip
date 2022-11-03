@@ -6,15 +6,25 @@ import javax.sound.sampled.SourceDataLine;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.util.Queue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class AudioPlayer {
 
     private AudioFormat audioFormat;
     private SourceDataLine sourceDataLine;
 
+    private Queue<byte[]> queue = new LinkedBlockingQueue<>();
+
     public AudioPlayer(AudioFormat audioFormat, SourceDataLine sourceDataLine) {
         this.audioFormat = audioFormat;
         this.sourceDataLine = sourceDataLine;
+    }
+
+    public void addToQueue(byte[] buffer) {
+        queue.add(buffer);
+        play(ByteBuffer.wrap(buffer));
+        System.out.println(queue.size());
     }
 
     public void play(ByteBuffer byteBuffer) {
@@ -28,7 +38,9 @@ public class AudioPlayer {
             sourceDataLine.start();
 
             Thread playThread = new Thread(new PlayThread(audioInputStream));
+            playThread.setDaemon(true);
             playThread.start();
+
         } catch (Exception e) {
             System.out.println(e);
             System.exit(0);

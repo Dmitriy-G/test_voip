@@ -1,51 +1,36 @@
 package client;
 
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
+import javax.sound.sampled.LineUnavailableException;
+import javax.sound.sampled.UnsupportedAudioFileException;
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.Socket;
 import java.nio.ByteBuffer;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.nio.channels.SocketChannel;
-import java.util.Iterator;
 import java.util.concurrent.RecursiveTask;
 
-public class ReceiveVoiceTask extends RecursiveTask<Void> {
+public class ReceiveVoiceTask extends RecursiveTask<Boolean> {
+    private DatagramSocket socket;
     private AudioPlayer audioPlayer;
-    private Selector selector;
-    private SocketChannel channel;
 
-    public ReceiveVoiceTask(AudioPlayer audioPlayer, Selector selector, SocketChannel channel) {
+    public ReceiveVoiceTask(DatagramSocket socket, AudioPlayer audioPlayer) {
+        this.socket = socket;
         this.audioPlayer = audioPlayer;
-        this.selector = selector;
-        this.channel = channel;
     }
 
     @Override
-    protected Void compute() {
+    protected Boolean compute() {
         while (true) {
+            byte[] tempBuffer = new byte[10000];
             try {
-                if (selector.select() == 0) {
-                    continue;
-                }
-
-                System.out.println("Received data from: " + channel.socket().getRemoteSocketAddress());
-
-                Iterator<SelectionKey> iterator = selector.selectedKeys().iterator();
-
-                while (iterator.hasNext()) {
-                    SelectionKey key = iterator.next();
-                    if (key.isReadable()) {
-                        ByteBuffer buffer = ByteBuffer.allocate(20000);
-
-                        if (channel.read(buffer) > 0) {
-                            buffer.flip();
-                            audioPlayer.play(buffer);
-                        }
-                        // send result of the command for client
-                        buffer.clear();
-                    }
-
-                    iterator.remove();
-                }
+                DatagramPacket packet = new DatagramPacket(tempBuffer, tempBuffer.length);
+                socket.receive(packet);
+                audioPlayer.play(ByteBuffer.wrap(tempBuffer));
             } catch (IOException e) {
                 e.printStackTrace();
             }

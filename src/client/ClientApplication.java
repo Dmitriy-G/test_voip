@@ -9,28 +9,26 @@ import javax.sound.sampled.TargetDataLine;
 import javax.swing.*;
 import java.awt.*;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.Socket;
+import java.nio.ByteBuffer;
 
 public class ClientApplication extends JFrame {
     private Boolean stopCapture = false;
-    private NetworkHelper networkHelper;
     private AudioPlayer audioPlayer;
 
     public static void main(String[] args) {
-        String serverName = args[0];
-        int port = Integer.parseInt(args[1]);
 
         try {
-            new ClientApplication(serverName, port);
+            new ClientApplication();
         } catch (LineUnavailableException exception) {
             exception.printStackTrace();
         }
     }
 
-    public ClientApplication(String serverName, Integer port) throws LineUnavailableException {
-        this.networkHelper = new NetworkHelper(serverName, port);
-        this.networkHelper.connect();
-
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+    public ClientApplication() throws LineUnavailableException {
         AudioFormat audioFormat = Utils.getAudioFormat();
 
         DataLine.Info targetDataLineInfo = new DataLine.Info(
@@ -43,45 +41,31 @@ public class ClientApplication extends JFrame {
         DataLine.Info sourceDataLineInfo = new DataLine.Info(SourceDataLine.class, audioFormat);
         SourceDataLine sourceDataLine = (SourceDataLine) AudioSystem.getLine(sourceDataLineInfo);
 
-        AudioRecorder audioRecorder = new AudioRecorder(audioFormat, targetDataLine, stopCapture, byteArrayOutputStream);
         this.audioPlayer = new AudioPlayer(audioFormat, sourceDataLine);
 
-        final JButton captureBtn = new JButton("Start");
-        final JButton stopBtn = new JButton("Stop");
 
-        captureBtn.setEnabled(true);
-        stopBtn.setEnabled(false);
+        try {
+            //0 - is random port
+            DatagramSocket socket = new DatagramSocket(0);
 
-        captureBtn.addActionListener(e -> {
-                    captureBtn.setEnabled(false);
-                    stopBtn.setEnabled(true);
-                    audioRecorder.record();
 
-//                    SendVoiceTask sendVoiceTask = new SendVoiceTask(networkHelper, byteArrayOutputStream);
-//                    sendVoiceTask.fork();
+            AudioRecorder audioRecorder = new AudioRecorder(audioFormat, targetDataLine, stopCapture, socket, this.audioPlayer);
 
-                    ReceiveVoiceTask receiveVoiceTask = new ReceiveVoiceTask(audioPlayer, networkHelper.getSelector(), networkHelper.getChannel());
-                    receiveVoiceTask.fork();
-                }
-        );
-        getContentPane().add(captureBtn);
+            ReceiveVoiceTask receiveVoiceTask = new ReceiveVoiceTask(socket, audioPlayer);
+            receiveVoiceTask.fork();
 
-        stopBtn.addActionListener(e -> {
-                    captureBtn.setEnabled(true);
-                    stopBtn.setEnabled(false);
-                    audioRecorder.stopCapture();
-                    networkHelper.sendData(byteArrayOutputStream);
-                    byteArrayOutputStream.reset();
-                }
-        );
-        getContentPane().add(stopBtn);
+            audioRecorder.record();
 
-        getContentPane().setLayout(
-                new FlowLayout());
-        setTitle("Test VOIP");
-        setDefaultCloseOperation(
-                EXIT_ON_CLOSE);
-        setSize(450, 150);
-        setVisible(true);
+            getContentPane().setLayout(
+                    new FlowLayout());
+            setTitle("Test VOIP");
+            setDefaultCloseOperation(
+                    EXIT_ON_CLOSE);
+            setSize(450, 150);
+            setVisible(true);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
