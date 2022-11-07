@@ -1,8 +1,5 @@
 package server;
 
-import client.AudioPlayer;
-import client.Utils;
-
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.DataLine;
@@ -23,17 +20,12 @@ public class ServerApplication {
             while (true) {
                 byte[] buffer = new byte[100000];
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+
                 socket.receive(packet);
-
-                AudioFormat audioFormat = Utils.getAudioFormat();
-
-                DataLine.Info sourceDataLineInfo = new DataLine.Info(SourceDataLine.class, audioFormat);
-                SourceDataLine sourceDataLine = (SourceDataLine) AudioSystem.getLine(sourceDataLineInfo);
-
                 socket.send(packet);
             }
 
-        } catch (IOException | LineUnavailableException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }

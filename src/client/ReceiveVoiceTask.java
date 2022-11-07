@@ -1,32 +1,26 @@
 package client;
 
-import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.Clip;
-import javax.sound.sampled.LineUnavailableException;
-import javax.sound.sampled.UnsupportedAudioFileException;
-import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.util.concurrent.RecursiveTask;
 
 public class ReceiveVoiceTask extends RecursiveTask<Boolean> {
     private DatagramSocket socket;
     private AudioPlayer audioPlayer;
+    private Integer bufferSize;
 
-    public ReceiveVoiceTask(DatagramSocket socket, AudioPlayer audioPlayer) {
+    public ReceiveVoiceTask(DatagramSocket socket, AudioPlayer audioPlayer, Integer bufferSize) {
         this.socket = socket;
         this.audioPlayer = audioPlayer;
+        this.bufferSize = bufferSize;
     }
 
     @Override
     protected Boolean compute() {
         while (true) {
-            byte[] tempBuffer = new byte[10000];
+            byte[] tempBuffer = new byte[bufferSize];
             try {
                 DatagramPacket packet = new DatagramPacket(tempBuffer, tempBuffer.length);
                 socket.receive(packet);

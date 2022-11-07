@@ -2,29 +2,21 @@ package client;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.SourceDataLine;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
-import java.util.Queue;
-import java.util.concurrent.LinkedBlockingQueue;
 
 public class AudioPlayer {
 
     private AudioFormat audioFormat;
     private SourceDataLine sourceDataLine;
 
-    private Queue<byte[]> queue = new LinkedBlockingQueue<>();
-
     public AudioPlayer(AudioFormat audioFormat, SourceDataLine sourceDataLine) {
         this.audioFormat = audioFormat;
         this.sourceDataLine = sourceDataLine;
-    }
-
-    public void addToQueue(byte[] buffer) {
-        queue.add(buffer);
-        play(ByteBuffer.wrap(buffer));
-        System.out.println(queue.size());
     }
 
     public void play(ByteBuffer byteBuffer) {
@@ -41,9 +33,9 @@ public class AudioPlayer {
             playThread.setDaemon(true);
             playThread.start();
 
-        } catch (Exception e) {
-            System.out.println(e);
-            System.exit(0);
+        } catch (LineUnavailableException e) {
+            //TODO: create custom exception
+            throw new RuntimeException(e);
         }
     }
 
@@ -59,7 +51,6 @@ public class AudioPlayer {
         public void run() {
             try {
                 int cnt;
-
                 while ((cnt = audioInputStream.read(tempBuffer, 0, tempBuffer.length)) != -1) {
                     if (cnt > 0) {
                         sourceDataLine.write(tempBuffer, 0, cnt);
@@ -67,9 +58,9 @@ public class AudioPlayer {
                 }
                 sourceDataLine.drain();
                 sourceDataLine.close();
-            } catch (Exception e) {
-                System.out.println(e);
-                System.exit(0);
+            } catch (IOException e) {
+                //TODO: create custom exception
+                throw new RuntimeException(e);
             }
         }
     }
