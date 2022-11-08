@@ -1,97 +1,66 @@
 package client;
 
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.DataLine;
+import javax.sound.sampled.LineUnavailableException;
+import javax.sound.sampled.SourceDataLine;
+import javax.sound.sampled.TargetDataLine;
+import javax.swing.*;
+import java.awt.*;
 import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.nio.channels.SocketChannel;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.util.Iterator;
-import java.util.Scanner;
+import java.net.DatagramSocket;
 
-public class ClientApplication {
+public class ClientApplication extends JFrame {
+    private Boolean stopCapture = false;
+    private AudioPlayer audioPlayer;
+
     public static void main(String[] args) {
-        String serverName = args[0];
-        int port = Integer.parseInt(args[1]);
-        String clientGuid = "";
-        boolean registered = false;
         try {
-            SocketChannel channel = SocketChannel.open();
-            Selector selector = Selector.open();
-            channel.configureBlocking(false);
-            channel.connect(new InetSocketAddress(serverName, port));
-            channel.register(selector, SelectionKey.OP_READ);
-            while (!channel.finishConnect()) {
-                System.out.println("still connecting");
-            }
-            System.out.println("Connect to " + channel.getRemoteAddress());
+            String host = args[0];
+            Integer port = Integer.parseInt(args[1]);
+            new ClientApplication(host, port);
+        } catch (LineUnavailableException exception) {
+            exception.printStackTrace();
+        }
+    }
 
-            while (true) {
-                if (selector.select() == 0) {
-                    continue;
-                }
-                Iterator<SelectionKey> registerIterator = selector.selectedKeys().iterator();
+    public ClientApplication(String host, Integer port) throws LineUnavailableException {
+        AudioFormat audioFormat = Utils.getAudioFormat();
 
-                while (registerIterator.hasNext()) {
-                    SelectionKey key = registerIterator.next();
-                    registerIterator.remove();
-                    if (key.isReadable()) {
-                        ByteBuffer buffer = ByteBuffer.allocate(100);
-                        channel.read(buffer);
-                        buffer.flip();
-                        clientGuid = String.valueOf(Charset.defaultCharset().decode(
-                                buffer));
-                        System.out.println(clientGuid);
-                    }
-                }
-                break;
-            }
+        DataLine.Info targetDataLineInfo = new DataLine.Info(
+                TargetDataLine.class,
+                audioFormat);
+        TargetDataLine targetDataLine = (TargetDataLine)
+                AudioSystem.getLine(
+                        targetDataLineInfo);
 
-            //Scanner in the loop for receive user commands via command line
-            Scanner scanner = new Scanner(System.in);
-            while (true) {
-                // read command and send it to server
-                if (!registered) {
-                    System.out.println("Please write username");
-                    String username = scanner.nextLine();
-                    String command = clientGuid + " " + "REGISTER" + " " + "System" + " " + username;
-                    CharBuffer  c = CharBuffer.wrap(command);
-                    ByteBuffer b = StandardCharsets.ISO_8859_1.encode(c);
-                    channel.write(b);
-                    registered = true;
-                    System.out.println("Success registration as " + username);
-                    continue;
-                }
+        DataLine.Info sourceDataLineInfo = new DataLine.Info(SourceDataLine.class, audioFormat);
+        SourceDataLine sourceDataLine = (SourceDataLine) AudioSystem.getLine(sourceDataLineInfo);
 
-                String line = scanner.nextLine();
-                String command = clientGuid + " " +  line;
-                CharBuffer  c = CharBuffer.wrap(command);
-                ByteBuffer b = StandardCharsets.ISO_8859_1.encode(c);
-                channel.write(b);
-                System.out.println("Command " + command + " was send");
+        this.audioPlayer = new AudioPlayer(audioFormat, sourceDataLine);
 
-                // read response from server with result of this command
-                // TODO: select() can block! But we need wait server response for testing it
-                // TODO: need listener
-                if (selector.select() == 0) {
-                    continue;
-                }
-                Iterator<SelectionKey> iterator = selector.selectedKeys().iterator();
-                while (iterator.hasNext()) {
-                    SelectionKey key = iterator.next();
-                    iterator.remove();
-                    if (key.isReadable()) {
-                        ByteBuffer buffer = ByteBuffer.allocate(100);
-                        channel.read(buffer);
-                        buffer.flip();
-                        System.out.println(Charset.defaultCharset().decode(
-                                buffer));
-                    }
-                }
-            }
+
+        try {
+            //0 - is random port
+            DatagramSocket socket = new DatagramSocket(0);
+
+            int bufferSize = 10000;
+            AudioRecorder audioRecorder = new AudioRecorder(audioFormat, targetDataLine, stopCapture, socket, host, port, bufferSize);
+
+            ReceiveVoiceTask receiveVoiceTask = new ReceiveVoiceTask(socket, audioPlayer, bufferSize);
+            receiveVoiceTask.fork();
+
+            audioRecorder.record();
+
+            getContentPane().setLayout(
+                    new FlowLayout());
+            setTitle("Test VOIP");
+            setDefaultCloseOperation(
+                    EXIT_ON_CLOSE);
+            setSize(450, 150);
+            setVisible(true);
+
         } catch (IOException e) {
             e.printStackTrace();
         }
