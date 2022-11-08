@@ -1,28 +1,37 @@
 package server;
 
-import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.DataLine;
-import javax.sound.sampled.LineUnavailableException;
-import javax.sound.sampled.SourceDataLine;
+import server.service.NetworkService;
+import server.utils.UserHelper;
+
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.InetAddress;
+import java.net.SocketAddress;
 
 public class ServerApplication {
     public static void main(String[] args) {
         try {
-            DatagramSocket socket = new DatagramSocket(8080, InetAddress.getLocalHost());
-
-            //Helper.logger.info("Waiting for new datagrams on " + socket.getInetAddress());
-            // new connection has been accepted
+            DatagramSocket socket = new DatagramSocket(8080);
+            NetworkService networkService = new NetworkService(socket);
             while (true) {
                 byte[] buffer = new byte[100000];
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
 
                 socket.receive(packet);
-                socket.send(packet);
+
+                SocketAddress socketAddress = packet.getSocketAddress();
+                System.out.println("Receive datagram from: " + socketAddress);
+
+                boolean isNewUser = UserHelper.isUserNew(socketAddress);
+
+                if (isNewUser) {
+                    UserHelper.addNewUser(socketAddress);
+                }
+
+                //System.out.println("Send datagram to: " + socket);
+
+                networkService.sendPacketToClients(packet, UserHelper.getUsers().keySet());
+                //socket.send(packet);
             }
 
         } catch (IOException e) {
