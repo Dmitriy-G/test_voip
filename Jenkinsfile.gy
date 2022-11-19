@@ -1,0 +1,74 @@
+pipeline {
+    tools {
+        'org.jenkinsci.plugins.docker.commons.tools.DockerTool' 'docker'
+    }
+    environment {
+        registry = "shadowxxx/test-voip"
+        registryCredential = 'dockerhub'
+        dockerImage = ''
+    }
+
+    agent any
+    stages {
+
+        stage('Cloning Git') {
+            steps {
+                git 'https://github.com/Dmitriy-G/test_voip.git'
+            }
+        }
+
+        stage('Building Jar') {
+            steps {
+                sh '''#!/bin/bash
+                cd src
+                javac server/*.java
+                jar cfe ../server.jar server.ServerApplication server
+                cd ..
+                mkdir -p out
+                cp server.jar out
+         '''
+            }
+        }
+
+        stage('Building docker image') {
+            steps{
+                script {
+                    dockerImage = docker.build registry + ":$BUILD_NUMBER"
+                }
+            }
+        }
+        stage('Push Image') {
+            steps{
+                script {
+                    docker.withTool('docker'){
+                        docker.withRegistry( '', registryCredential) {
+                            dockerImage.push()
+                        }
+                    }
+                }
+            }
+        }
+        stage('Run new version') {
+            steps{
+                script {
+                    docker.withTool('docker'){
+                        docker.withRegistry( '', registryCredential) {
+                            containerName = ('test-voip' + ":$BUILD_NUMBER").replace(":", "_")
+                            dockerImage.run('--name "' + containerName +'" -p 3333:3333/udp')
+                        }
+                    }
+                }
+            }
+        }
+        /* stage('Stop old container') {
+           steps{
+             sh "docker rmi $registry:$BUILD_NUMBER"
+           }
+         }
+         stage('Remove old docker image') {
+           steps{
+             sh "docker rmi $registry:$BUILD_NUMBER"
+           }
+         }*/
+    }
+}

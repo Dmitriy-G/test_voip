@@ -11,7 +11,7 @@ import java.net.SocketAddress;
 public class ServerApplication {
     public static void main(String[] args) {
         try {
-            DatagramSocket socket = new DatagramSocket(8080);
+            DatagramSocket socket = new DatagramSocket(3333);
             NetworkService networkService = new NetworkService(socket);
             while (true) {
                 byte[] buffer = new byte[100000];
