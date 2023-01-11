@@ -10,6 +10,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.io.IOException;
 import java.net.DatagramSocket;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class ClientApplication extends JFrame {
     private Boolean stopCapture = false;
@@ -19,13 +20,15 @@ public class ClientApplication extends JFrame {
         try {
             String host = args[0];
             Integer port = Integer.parseInt(args[1]);
-            new ClientApplication(host, port);
+            //String username = args[2];
+            String username = String.valueOf(ThreadLocalRandom.current().nextInt(1, 1000));
+            new ClientApplication(host, port, username);
         } catch (LineUnavailableException exception) {
             exception.printStackTrace();
         }
     }
 
-    public ClientApplication(String host, Integer port) throws LineUnavailableException {
+    public ClientApplication(String host, Integer port, String username) throws LineUnavailableException {
         AudioFormat audioFormat = Utils.getAudioFormat();
 
         DataLine.Info targetDataLineInfo = new DataLine.Info(
@@ -45,11 +48,13 @@ public class ClientApplication extends JFrame {
             //0 - is random port
             DatagramSocket socket = new DatagramSocket(0);
 
-            int bufferSize = 10000;
-            AudioRecorder audioRecorder = new AudioRecorder(audioFormat, targetDataLine, stopCapture, socket, host, port, bufferSize);
+            int outputBufferSize = 244;
+            AudioRecorder audioRecorder = new AudioRecorder(audioFormat, targetDataLine, stopCapture, socket, host, port, outputBufferSize);
 
-            ReceiveVoiceTask receiveVoiceTask = new ReceiveVoiceTask(socket, audioPlayer, bufferSize);
-            receiveVoiceTask.fork();
+            ReceivePacketsTask receivePacketsTask = new ReceivePacketsTask(socket, host, port, audioPlayer, outputBufferSize);
+            receivePacketsTask.fork();
+
+            ClientSecurityHelper.sendInitialPackage(socket, host, port, username);
 
             audioRecorder.record();
 

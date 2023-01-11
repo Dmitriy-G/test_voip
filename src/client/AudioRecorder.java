@@ -5,6 +5,7 @@ import javax.sound.sampled.TargetDataLine;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.nio.charset.StandardCharsets;
 
 public class AudioRecorder {
 
@@ -43,10 +44,13 @@ public class AudioRecorder {
             stopCapture = false;
             try {
                 while (!stopCapture) {
-                    int cnt = targetDataLine.read(tempBuffer, 0, tempBuffer.length);
-                    DatagramPacket packet = new DatagramPacket(tempBuffer, tempBuffer.length, InetAddress.getByName(host), port);
-                    if (cnt > 0) {
-                        socket.send(packet);
+                    if (ClientSecurityHelper.IS_ACKNOWLEDGE_PROCESS_FINISHED) {
+                        int cnt = targetDataLine.read(tempBuffer, 0, tempBuffer.length);
+                        byte[] encryptedBytes = ClientSecurityHelper.encryptMessage(tempBuffer);
+                        DatagramPacket packet = new DatagramPacket(encryptedBytes, encryptedBytes.length, InetAddress.getByName(host), port);
+                        if (cnt > 0) {
+                            socket.send(packet);
+                        }
                     }
                 }
             } catch (Exception e) {

@@ -21,7 +21,7 @@ public class AudioPlayer {
 
     public void play(ByteBuffer byteBuffer) {
         try {
-            byte audioData[] = byteBuffer.array();
+            byte[] audioData = byteBuffer.array();
 
             InputStream byteArrayInputStream = new ByteArrayInputStream(audioData);
             AudioInputStream audioInputStream = new AudioInputStream(byteArrayInputStream, audioFormat, audioData.length / audioFormat.getFrameSize());
